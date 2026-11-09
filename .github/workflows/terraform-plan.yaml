@@ -1,0 +1,49 @@
+name: Terraform Plan
+
+on:
+  pull_request:
+    branches: [main]
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  plan:
+    if: github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+
+    env:
+      TF_IN_AUTOMATION: "true"
+      TF_INPUT: "false"
+      TF_VAR_my_ip: ${{ secrets.SSH_CIDR }}
+      TF_VAR_ec2_key_pair_name: ${{ vars.EC2_KEY_PAIR_NAME }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "1.13.5"
+
+      - name: AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v6.3.0
+        with:
+          role-to-assume: ${{ vars.AWS_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_REGION }}
+          allowed-account-ids: ${{ vars.ALLOWED_ACCOUNT_IDS }}
+
+      - name: Terraform Plan
+        run: |
+          terraform init
+          terraform validate
+          terraform plan -out=tfplan
+          aws s3 cp tfplan \
+            s3://task1-tfstate-687078156188/task1/plans/pr-${{ github.event.pull_request.number }}/${{ github.event.pull_request.head.sha }}/tfplan \
+            --sse AES256
