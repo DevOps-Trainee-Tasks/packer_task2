@@ -1,0 +1,447 @@
+apiVersion: 1
+groups:
+  - orgId: 1
+    name: llm-node
+    folder: Monitoring
+    interval: 1m
+    rules:
+      - uid: bg38020xacqo0c
+        title: llm-ec2-high-cpu
+        annotations:
+          description: "Використання CPU на LLM EC2 перевищує 80% протягом 5 хвилин."
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 600
+              to: 0
+            datasourceUid: PBFA97CFB590B2093
+            model:
+              editorMode: code
+              expr: 100 * (1 - avg by (instance) (rate(node_cpu_seconds_total{job="llm-node",mode="idle"}[5m])))
+              instant: true
+              intervalMs: 1000
+              legendFormat: __auto
+              maxDataPoints: 43200
+              range: false
+              refId: A
+          - refId: C
+            queryType: expression
+            datasourceUid: __expr__
+            model:
+              conditions:
+                - evaluator:
+                    params:
+                      - 80
+                    type: gt
+                  operator:
+                    type: and
+                  query:
+                    params:
+                      - C
+                  reducer:
+                    params: []
+                    type: last
+                  type: query
+              datasource:
+                type: __expr__
+                uid: __expr__
+              expression: A
+              intervalMs: 1000
+              maxDataPoints: 43200
+              refId: C
+              type: threshold
+        noDataState: NoData
+        execErrState: Error
+        for: 5m
+        isPaused: false
+        notification_settings:
+          receiver: llm-email
+      - uid: eg380d2v9iepsf
+        title: llm-ec2-high-memory
+        annotations:
+          description: "Використання пам'яті на LLM EC2 перевищує 80% протягом 5 хвилин."
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 600
+              to: 0
+            datasourceUid: PBFA97CFB590B2093
+            model:
+              editorMode: code
+              expr: 100 * (1 - node_memory_MemAvailable_bytes{job="llm-node"} / node_memory_MemTotal_bytes{job="llm-node"})
+              instant: true
+              intervalMs: 1000
+              legendFormat: __auto
+              maxDataPoints: 43200
+              range: false
+              refId: A
+          - refId: C
+            queryType: expression
+            datasourceUid: __expr__
+            model:
+              conditions:
+                - evaluator:
+                    params:
+                      - 80
+                    type: gt
+                  operator:
+                    type: and
+                  query:
+                    params:
+                      - C
+                  reducer:
+                    params: []
+                    type: last
+                  type: query
+              datasource:
+                type: __expr__
+                uid: __expr__
+              expression: A
+              intervalMs: 1000
+              maxDataPoints: 43200
+              refId: C
+              type: threshold
+        noDataState: NoData
+        execErrState: Error
+        for: 5m
+        isPaused: false
+        notification_settings:
+          receiver: llm-email
+      - uid: fg380fqji06psd
+        title: llm-ec2-low-disk-space
+        annotations:
+          description: "На кореневому диску LLM EC2 залишилося менше 20% вільного місця протягом 5 хвилин."
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 600
+              to: 0
+            datasourceUid: PBFA97CFB590B2093
+            model:
+              editorMode: code
+              expr: 100 * node_filesystem_avail_bytes{job="llm-node",mountpoint="/"} / node_filesystem_size_bytes{job="llm-node",mountpoint="/"}
+              instant: true
+              intervalMs: 1000
+              legendFormat: __auto
+              maxDataPoints: 43200
+              range: false
+              refId: A
+          - refId: C
+            queryType: expression
+            datasourceUid: __expr__
+            model:
+              conditions:
+                - evaluator:
+                    params:
+                      - 20
+                    type: lt
+                  operator:
+                    type: and
+                  query:
+                    params:
+                      - C
+                  reducer:
+                    params: []
+                    type: last
+                  type: query
+              datasource:
+                type: __expr__
+                uid: __expr__
+              expression: A
+              intervalMs: 1000
+              maxDataPoints: 43200
+              refId: C
+              type: threshold
+        noDataState: NoData
+        execErrState: Error
+        for: 5m
+        isPaused: false
+        notification_settings:
+          receiver: llm-email
+  - orgId: 1
+    name: alb-alerts
+    folder: Monitoring
+    interval: 1m
+    rules:
+      - uid: bg3blshl54ydcb
+        title: alb-4xx
+        annotations:
+          description: "ALB згенерував щонайменше одну помилку HTTP 4xx за хвилину."
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 300
+              to: 0
+            datasourceUid: P034F075C744B399F
+            model:
+              datasource:
+                type: cloudwatch
+                uid: P034F075C744B399F
+              expression: "SEARCH('{AWS/ApplicationELB,LoadBalancer} MetricName=\"HTTPCode_ELB_4XX_Count\" LoadBalancer=${alb_name}', 'Sum', 60)"
+              hide: false
+              id: ""
+              instant: true
+              intervalMs: 1000
+              label: ""
+              logGroups: []
+              maxDataPoints: 43200
+              metricEditorMode: 1
+              metricName: HTTPCode_ELB_4XX_Count
+              metricQueryType: 0
+              namespace: AWS/ApplicationELB
+              period: "60"
+              queryLanguage: CWLI
+              queryMode: Metrics
+              refId: A
+              region: default
+              sqlExpression: ""
+              statistic: Sum
+          - refId: reducer
+            queryType: expression
+            datasourceUid: __expr__
+            model:
+              conditions:
+                - evaluator:
+                    params:
+                      - 0
+                      - 0
+                    type: gt
+                  operator:
+                    type: and
+                  query:
+                    params: []
+                  reducer:
+                    params: []
+                    type: avg
+                  type: query
+              datasource:
+                name: Expression
+                type: __expr__
+                uid: __expr__
+              expression: A
+              intervalMs: 1000
+              maxDataPoints: 43200
+              reducer: last
+              refId: reducer
+              type: reduce
+          - refId: C
+            queryType: expression
+            datasourceUid: __expr__
+            model:
+              conditions:
+                - evaluator:
+                    params:
+                      - 0
+                    type: gt
+                  operator:
+                    type: and
+                  query:
+                    params:
+                      - C
+                  reducer:
+                    params: []
+                    type: last
+                  type: query
+              datasource:
+                type: __expr__
+                uid: __expr__
+              expression: reducer
+              intervalMs: 1000
+              maxDataPoints: 43200
+              refId: C
+              type: threshold
+        noDataState: OK
+        execErrState: Error
+        isPaused: false
+        notification_settings:
+          receiver: llm-email
+      - uid: cg3blx500ncowd
+        title: alb-5xx
+        annotations:
+          description: "ALB згенерував щонайменше одну помилку HTTP 5xx за хвилину."
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 300
+              to: 0
+            datasourceUid: P034F075C744B399F
+            model:
+              datasource:
+                type: cloudwatch
+                uid: P034F075C744B399F
+              expression: "SEARCH('{AWS/ApplicationELB,LoadBalancer} MetricName=\"HTTPCode_ELB_5XX_Count\" LoadBalancer=${alb_name}', 'Sum', 60)"
+              id: ""
+              instant: true
+              intervalMs: 1000
+              label: ""
+              logGroups: []
+              maxDataPoints: 43200
+              metricEditorMode: 1
+              metricName: HTTPCode_ELB_5XX_Count
+              metricQueryType: 0
+              namespace: AWS/ApplicationELB
+              period: "60"
+              queryLanguage: CWLI
+              queryMode: Metrics
+              refId: A
+              region: default
+              sqlExpression: ""
+              statistic: Sum
+          - refId: reducer
+            queryType: expression
+            datasourceUid: __expr__
+            model:
+              conditions:
+                - evaluator:
+                    params:
+                      - 0
+                      - 0
+                    type: gt
+                  operator:
+                    type: and
+                  query:
+                    params: []
+                  reducer:
+                    params: []
+                    type: avg
+                  type: query
+              datasource:
+                name: Expression
+                type: __expr__
+                uid: __expr__
+              expression: A
+              intervalMs: 1000
+              maxDataPoints: 43200
+              reducer: last
+              refId: reducer
+              type: reduce
+          - refId: C
+            queryType: expression
+            datasourceUid: __expr__
+            model:
+              conditions:
+                - evaluator:
+                    params:
+                      - 0
+                    type: gt
+                  operator:
+                    type: and
+                  query:
+                    params:
+                      - C
+                  reducer:
+                    params: []
+                    type: last
+                  type: query
+              datasource:
+                type: __expr__
+                uid: __expr__
+              expression: reducer
+              intervalMs: 1000
+              maxDataPoints: 43200
+              refId: C
+              type: threshold
+        noDataState: OK
+        execErrState: Error
+        isPaused: false
+        notification_settings:
+          receiver: llm-email
+      - uid: eg3bm5v65wbnkf
+        title: alb-response-time
+        annotations:
+          description: "Середній час відповіді цільових інстансів ALB перевищує 2 секунди протягом 5 хвилин."
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 300
+              to: 0
+            datasourceUid: P034F075C744B399F
+            model:
+              datasource:
+                type: cloudwatch
+                uid: P034F075C744B399F
+              expression: "SEARCH('{AWS/ApplicationELB,LoadBalancer} MetricName=\"TargetResponseTime\" LoadBalancer=${alb_name}', 'Average', 60)"
+              hide: false
+              id: ""
+              instant: true
+              intervalMs: 1000
+              label: ""
+              logGroups: []
+              maxDataPoints: 43200
+              metricEditorMode: 1
+              metricName: TargetResponseTime
+              metricQueryType: 0
+              namespace: AWS/ApplicationELB
+              period: "60"
+              queryLanguage: CWLI
+              queryMode: Metrics
+              refId: A
+              region: default
+              sqlExpression: ""
+              statistic: Average
+          - refId: reducer
+            queryType: expression
+            datasourceUid: __expr__
+            model:
+              conditions:
+                - evaluator:
+                    params:
+                      - 0
+                      - 0
+                    type: gt
+                  operator:
+                    type: and
+                  query:
+                    params: []
+                  reducer:
+                    params: []
+                    type: avg
+                  type: query
+              datasource:
+                name: Expression
+                type: __expr__
+                uid: __expr__
+              expression: A
+              intervalMs: 1000
+              maxDataPoints: 43200
+              reducer: last
+              refId: reducer
+              type: reduce
+          - refId: C
+            queryType: expression
+            datasourceUid: __expr__
+            model:
+              conditions:
+                - evaluator:
+                    params:
+                      - 2
+                    type: gt
+                  operator:
+                    type: and
+                  query:
+                    params:
+                      - C
+                  reducer:
+                    params: []
+                    type: last
+                  type: query
+              datasource:
+                type: __expr__
+                uid: __expr__
+              expression: reducer
+              intervalMs: 1000
+              maxDataPoints: 43200
+              refId: C
+              type: threshold
+        noDataState: OK
+        execErrState: Error
+        for: 5m
+        isPaused: false
+        notification_settings:
+          receiver: llm-email

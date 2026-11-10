@@ -1,0 +1,9 @@
+apiVersion: 1
+contactPoints:
+  - orgId: 1
+    name: llm-email
+    receivers:
+      - uid: fg37zcdm30agwd
+        type: email
+        settings:
+          addresses: ${alert_email}
