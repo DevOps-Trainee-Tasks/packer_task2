@@ -4,7 +4,14 @@ build {
   provisioner "shell" {
     script = "scripts/install-prometheus.sh"
     environment_vars = [
-      "PROMETHEUS_VERSION=${var.prometheus_version}",
+      "PROMETHEUS_VERSION=${var.prometheus_version}"
+    ]
+    execute_command = "sudo env {{ .Vars }} bash '{{ .Path }}'"
+  }
+
+  provisioner "shell" {
+    script = "scripts/configure-prometheus.sh"
+    environment_vars = [
       "PROMETHEUS_PORT=${var.prometheus_port}",
       "PROMETHEUS_RETENTION_SIZE=${var.prometheus_retention_size}",
       "SCRAPE_INTERVAL=${var.scrape_interval}",
@@ -34,35 +41,35 @@ build {
 
   provisioner "file" {
     sources = [
-      "../monitoring/grafana/dashboards/cpu.json",
-      "../monitoring/grafana/dashboards/memory.json",
-      "../monitoring/grafana/dashboards/root-disk.json"
+      "grafana/dashboards/cpu.json",
+      "grafana/dashboards/memory.json",
+      "grafana/dashboards/root-disk.json"
     ]
     destination = "/tmp/"
   }
 
   provisioner "file" {
-    content     = templatefile("../monitoring/grafana/dashboards/alb-4xx.json", { alb_name = "${var.project}-alb" })
+    content     = templatefile("grafana/dashboards/alb-4xx.json", { alb_name = "${var.project}-alb" })
     destination = "/tmp/alb-4xx.json"
   }
 
   provisioner "file" {
-    content     = templatefile("../monitoring/grafana/dashboards/alb-5xx.json", { alb_name = "${var.project}-alb" })
+    content     = templatefile("grafana/dashboards/alb-5xx.json", { alb_name = "${var.project}-alb" })
     destination = "/tmp/alb-5xx.json"
   }
 
   provisioner "file" {
-    content     = templatefile("../monitoring/grafana/dashboards/response-time.json", { alb_name = "${var.project}-alb" })
+    content     = templatefile("grafana/dashboards/response-time.json", { alb_name = "${var.project}-alb" })
     destination = "/tmp/response-time.json"
   }
 
   provisioner "file" {
-    content     = templatefile("../monitoring/grafana/alert-rules.yaml", { alb_name = "${var.project}-alb" })
+    content     = templatefile("grafana/alert-rules.yaml", { alb_name = "${var.project}-alb" })
     destination = "/tmp/alert-rules.yaml"
   }
 
   provisioner "file" {
-    content     = templatefile("../monitoring/grafana/contact-points.yaml", { alert_email = var.alert_email })
+    content     = templatefile("grafana/contact-points.yaml", { alert_email = var.alert_email })
     destination = "/tmp/contact-points.yaml"
   }
 
