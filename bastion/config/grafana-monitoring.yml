@@ -1,0 +1,6 @@
+apiVersion: 1
+providers:
+  - name: Monitoring
+    folder: Monitoring
+    options:
+      path: /var/lib/grafana/dashboards

@@ -1,0 +1,11 @@
+[Unit]
+Description=Prometheus
+After=network.target
+
+[Service]
+User=prometheus
+ExecStart=/usr/local/bin/prometheus --config.file=/etc/prometheus/prometheus.yml --storage.tsdb.path=/var/lib/prometheus --storage.tsdb.retention.size=${prometheus_retention_size} --web.listen-address=0.0.0.0:${prometheus_port}
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target

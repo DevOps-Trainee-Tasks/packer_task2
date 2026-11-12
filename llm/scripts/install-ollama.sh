@@ -7,10 +7,7 @@ curl -fsSL https://ollama.com/install.sh -o /tmp/install-ollama.sh
 sh /tmp/install-ollama.sh
 
 mkdir -p /etc/systemd/system/ollama.service.d
-cat > /etc/systemd/system/ollama.service.d/override.conf <<EOF
-[Service]
-Environment="OLLAMA_HOST=0.0.0.0:$OLLAMA_PORT"
-EOF
+install -m 644 /tmp/ollama-override.conf /etc/systemd/system/ollama.service.d/override.conf
 
 systemctl daemon-reload
 systemctl restart ollama

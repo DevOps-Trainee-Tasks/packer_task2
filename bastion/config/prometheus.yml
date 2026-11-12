@@ -1,0 +1,16 @@
+global:
+  scrape_interval: ${scrape_interval}
+
+scrape_configs:
+  - job_name: prometheus
+    static_configs:
+      - targets: ["localhost:${prometheus_port}"]
+
+  - job_name: llm-node
+    ec2_sd_configs:
+      - port: ${node_exporter_port}
+        filters:
+          - name: tag:Name
+            values: [${llm_name_tag}]
+          - name: instance-state-name
+            values: [running]

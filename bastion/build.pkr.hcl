@@ -1,6 +1,60 @@
 build {
   sources = ["source.amazon-ebs.bastion"]
 
+  provisioner "file" {
+    content = templatefile("config/prometheus.yml", {
+      scrape_interval    = var.scrape_interval
+      prometheus_port    = var.prometheus_port
+      node_exporter_port = var.node_exporter_port
+      llm_name_tag       = var.llm_name_tag
+    })
+    destination = "/tmp/prometheus.yml"
+  }
+
+  provisioner "file" {
+    content = templatefile("config/prometheus.service", {
+      prometheus_retention_size = var.prometheus_retention_size
+      prometheus_port           = var.prometheus_port
+    })
+    destination = "/tmp/prometheus.service"
+  }
+
+  provisioner "file" {
+    sources = [
+      "config/grafana.repo",
+      "config/grafana-monitoring.yml",
+      "config/grafana-smtp.conf"
+    ]
+    destination = "/tmp/"
+  }
+
+  provisioner "file" {
+    content     = templatefile("config/grafana-prometheus.yml", { prometheus_port = var.prometheus_port })
+    destination = "/tmp/grafana-prometheus.yml"
+  }
+
+  provisioner "file" {
+    content     = templatefile("config/grafana-cloudwatch.yml", { aws_region = var.aws_region })
+    destination = "/tmp/grafana-cloudwatch.yml"
+  }
+
+  provisioner "file" {
+    content = templatefile("config/grafana.ini", {
+      smtp_host            = var.smtp_host
+      alert_email          = var.alert_email
+      smtp_starttls_policy = var.smtp_starttls_policy
+    })
+    destination = "/tmp/grafana.ini"
+  }
+
+  provisioner "file" {
+    content = templatefile("config/grafana-smtp-password.service", {
+      aws_region          = var.aws_region
+      smtp_parameter_name = "/${var.project}/grafana/smtp-password"
+    })
+    destination = "/tmp/grafana-smtp-password.service"
+  }
+
   provisioner "shell" {
     script = "scripts/install-prometheus.sh"
     environment_vars = [
@@ -10,27 +64,12 @@ build {
   }
 
   provisioner "shell" {
-    script = "scripts/configure-prometheus.sh"
-    environment_vars = [
-      "PROMETHEUS_PORT=${var.prometheus_port}",
-      "PROMETHEUS_RETENTION_SIZE=${var.prometheus_retention_size}",
-      "SCRAPE_INTERVAL=${var.scrape_interval}",
-      "NODE_EXPORTER_PORT=${var.node_exporter_port}",
-      "LLM_NAME_TAG=${var.llm_name_tag}"
-    ]
+    script          = "scripts/configure-prometheus.sh"
     execute_command = "sudo env {{ .Vars }} bash '{{ .Path }}'"
   }
 
   provisioner "shell" {
-    script = "scripts/install-grafana.sh"
-    environment_vars = [
-      "AWS_REGION=${var.aws_region}",
-      "PROMETHEUS_PORT=${var.prometheus_port}",
-      "ALERT_EMAIL=${var.alert_email}",
-      "SMTP_HOST=${var.smtp_host}",
-      "SMTP_STARTTLS_POLICY=${var.smtp_starttls_policy}",
-      "SMTP_PARAMETER_NAME=/${var.project}/grafana/smtp-password"
-    ]
+    script          = "scripts/install-grafana.sh"
     execute_command = "sudo env {{ .Vars }} bash '{{ .Path }}'"
   }
 

@@ -8,17 +8,6 @@ install "/tmp/node_exporter-$NODE_EXPORTER_VERSION.linux-amd64/node_exporter" /u
 
 useradd -r -s /sbin/nologin node_exporter
 
-cat > /etc/systemd/system/node_exporter.service <<'EOF'
-[Unit]
-Description=Node Exporter
-
-[Service]
-User=node_exporter
-ExecStart=/usr/local/bin/node_exporter
-Restart=on-failure
-
-[Install]
-WantedBy=multi-user.target
-EOF
+install -m 644 /tmp/node_exporter.service /etc/systemd/system/node_exporter.service
 
 systemctl enable node_exporter

@@ -1,6 +1,16 @@
 build {
   sources = ["source.amazon-ebs.llm"]
 
+  provisioner "file" {
+    source      = "config/node_exporter.service"
+    destination = "/tmp/node_exporter.service"
+  }
+
+  provisioner "file" {
+    content     = templatefile("config/ollama-override.conf", { ollama_port = var.ollama_port })
+    destination = "/tmp/ollama-override.conf"
+  }
+
   provisioner "shell" {
     script = "scripts/install-node-exporter.sh"
     environment_vars = [
